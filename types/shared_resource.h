@@ -1,14 +1,17 @@
 #pragma once
 
+#include<semaphore>
+// #include"shared_memory.h"
+
 template<class T>
-class ThreadSafeVariable
+class SharedResource
 {
     private:
         T value;
         std::binary_semaphore sem{0};
 
     public:
-        ThreadSafeVariable(T value)
+        SharedResource(T value)
         {
             this->value = value;
             this->sem.release();

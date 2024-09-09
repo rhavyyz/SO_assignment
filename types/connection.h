@@ -1,12 +1,19 @@
 #pragma once
+
+
 #include <thread>
 #include <sys/shm.h>
 #include <sys/ipc.h>
-#include <cstdlib>
+// #include <cstdlib>
+#include"signal.h"
 #include <semaphore>
 
-#include"message.h"
+#include <unistd.h>
+
 #include"classification.h"
+#include "question/question_awnser.h"
+#include "question/question_view.h"
+#include"shared_memory.h"
 
 
 /*
@@ -26,25 +33,26 @@
 class Connection
 {
     public:
-        std::thread::id client_id;
-        std::thread::id server_id;
-        int message_id;
-        int classification_id;
-        std::binary_semaphore from_client_signal{0};
-        std::binary_semaphore from_server_signal{0};
+        pid_t client_id;
+        pid_t server_id;
+        QuestionAwnser question_awnser;
+        QuestionView question_view;
+        Classification classification = Classification(0, 0, 0, false);
 
-        Connection(std::thread::id base_ids)
+
+        Signal from_client_signal, 
+               from_server_signal;
+
+        Connection(pid_t client_id, pid_t server_id)
         {
-            this->client_id = this->server_id = base_ids;
-
-            this->message_id = shmget((key_t)1122, sizeof(Message), 0666 | IPC_CREAT);
-            this->classification_id = shmget((key_t)1122, sizeof(Classification), 0666 | IPC_CREAT);
+            this->client_id = client_id; 
+            this->server_id = server_id;
         }
 
         void free()
         {
-            shmctl(this->message_id, IPC_RMID, NULL);
-            shmctl(this->classification_id, IPC_RMID, NULL);
+            // shared_memory::free_shared_memory(this->question_view_id);
+            
         // return true;   
         }    
 

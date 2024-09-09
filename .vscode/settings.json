@@ -57,6 +57,14 @@
         "streambuf": "cpp",
         "thread": "cpp",
         "typeinfo": "cpp",
-        "variant": "cpp"
+        "variant": "cpp",
+        "any": "cpp",
+        "codecvt": "cpp",
+        "cstring": "cpp",
+        "forward_list": "cpp",
+        "set": "cpp",
+        "fstream": "cpp",
+        "ranges": "cpp",
+        "valarray": "cpp"
     }
 }
