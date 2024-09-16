@@ -5,9 +5,11 @@
 
 namespace shared_memory
 {
+
+    int key = 1122;
     int create_shared_memory(int size)
     {
-        return shmget((key_t)1122, size, 0666 | IPC_CREAT);
+        return shmget((key_t)key++, size, 0666 | IPC_CREAT);
     }
 
     void* get_shared_memory(int id)

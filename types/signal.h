@@ -2,6 +2,11 @@
 
 #include<semaphore>
 
+
+
+/*
+    Class to simulate a signal sent through threads/processes
+*/
 class Signal
 {
 private:

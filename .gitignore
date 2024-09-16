@@ -1,1 +1,7 @@
 build
+
+testes.cpp
+
+.vscode
+
+**/*.out

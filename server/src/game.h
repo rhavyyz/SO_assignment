@@ -14,6 +14,8 @@
 #include <unistd.h>
 #include<utility>
 
+// #define DEBUG 1
+
 using json = nlohmann::json;
 
 using std::cout, std::endl;
@@ -24,7 +26,7 @@ class Game
     Connection * connections;
     Registration * registration;
     int registration_id, connections_id;
-    int max_players, time_for_question, current_players;
+    int max_players, time_for_question, current_players= 0;
 
     GameState state = GameState::transitioning;
     std::binary_semaphore sem{1};
@@ -36,16 +38,22 @@ class Game
 
         for(int i = 0; i < max_players; i++)
         {
+            #ifdef DEBUG
+                std::cout << "[DEBUG] Waiting for someone to start its registration" << std::endl;
+            #endif  
             registration->from_client_signal.wait_signal();
-
-
+            #ifdef DEBUG
+                std::cout << "[DEBUG] Started registrating" << std::endl;
+            #endif  
 
             if (state != GameState::registration || !registration->openned)
             {
+                #ifdef DEBUG
+                    std::cout << "[DEBUG] Registration ending conditions where reached" << std::endl;
+                #endif  
+
                 registration->openned = false;
-                shared_memory::free_shared_memory(registration_id);
                 registration->from_server_signal.send_signal();
-                sem.release();
                 return;
             }
 
@@ -57,6 +65,15 @@ class Game
 
             if(i == max_players-1)
                 registration->openned = false;
+
+            #ifdef DEBUG
+                std::cout << "[DEBUG] Infos about the current registration" << std::endl;
+                std::cout << "[DEBUG] " << registration->client_id << std::endl;
+                std::cout << "[DEBUG] " << registration->connection_memory_id << std::endl;
+                std::cout << "[DEBUG] " << registration->in_server_id << std::endl;
+                std::cout << "[DEBUG] " << registration->openned << std::endl;
+            #endif  
+
 
             registration->from_server_signal.send_signal();
         }
@@ -81,20 +98,44 @@ class Game
         char c = std::getchar();
 
         registration->sem.acquire();
-        state = GameState::transitioning;
-        registration->from_client_signal.send_signal();
-        registration->from_server_signal.wait_signal();
+        state = GameState::transitioning; 
+        if (registration->openned)
+        {    
+            #ifdef DEBUG
+                std::cout << "[DEBUG] simulating the client behavior to induce the connection thread do end properly" << std::endl;
+            #endif  
 
+            registration->from_client_signal.send_signal();
+            registration->from_server_signal.wait_signal(); 
+        }
+        registration = NULL;
+        r.join();
+        shared_memory::free_shared_memory(registration_id);  
     }
 
     void launch_question(Question & question)
     {
+        #ifdef DEBUG
+            std::cout << "[DEBUG] Starting to load questions" << std::endl;
+        #endif
         for(int i = 0; i < current_players; i++)
         {        
+
+            #ifdef DEBUG
+                std::cout << "[DEBUG] Setting question " << question.question_id<< " to " << i << "th " << std::endl;
+            #endif
             connections[i].question_view.load(question);
 
+            #ifdef DEBUG
+                std::cout << "[DEBUG] Sending signal to the " << i << "th client" << std::endl;
+            #endif
             connections[i].from_server_signal.send_signal();
         }
+
+
+        #ifdef DEBUG
+            std::cout << "[DEBUG] Ended sending the question " << question.question_id << std::endl;
+        #endif
 
         state = GameState::transitioning;
     }
@@ -103,24 +144,33 @@ class Game
     {
         for (int i = 0; i < scores.size(); i++)
         {
-                //    int total_players,
-                //    int your_rank,
-                //    int your_points,
-                //    bool is_final
+            #ifdef DEBUG
+                std::cout << "[DEBUG] Setting classification to " << i << "th " << std::endl;
+            #endif
+
             connections[scores[i].second].classification = Classification(current_players, 
                                                                           i+1, 
                                                                           scores[i].first, 
                                                                           questions.back().question_id == question_id
 
             );
+
+
+            #ifdef DEBUG
+                std::cout << "[DEBUG] Sending signal to the " << i << "th client" << std::endl;
+            #endif
+            connections[scores[i].second].from_server_signal.send_signal();
         }
-        
     }
 
-    void att_scores(Question & question)
+    void update_scores(Question & question)
     {
         std::vector<std::pair<time_t, std::pair<int, int>>> awnsers;
 
+
+        #ifdef DEBUG
+            cout << "[DEBUG] Getting awnsers" << endl;
+        #endif  
         for(int i = 0; i < current_players; i++)
         {
             if(connections[i].question_awnser.question_id.get_value() == question.question_id)
@@ -132,22 +182,39 @@ class Game
             }
         }
 
-
+        #ifdef DEBUG
+            cout << "[DEBUG] Sorting awnser by time " << endl;
+        #endif  
         std::sort(awnsers.begin(), awnsers.end());
+
 
         for(auto [t, awnser] : awnsers)
         {
+            
             if(awnser.first == question.awnser_index)
             {
+                #ifdef DEBUG
+                    cout << "[DEBUG] First correct awnser sent by the " << awnser.second << "th connection" << endl;
+                #endif  
                 for(auto & score : scores)
                 {
+
+                    #ifdef DEBUG
+                        cout << "it entered" << endl;
+                    #endif  
+
                     if (score.second == awnser.second)
                     {
                         score.first++;
+
+                        cout << std::endl;
                         break;
                     }
                 }
 
+                #ifdef DEBUG
+                    cout << "[DEBUG] Sorting new scores" << endl;
+                #endif 
                 std::stable_sort(scores.begin(), scores.end());
 
                 break;
@@ -169,6 +236,10 @@ class Game
             
             std::ifstream f(argv[1]);
             json file = json::parse(f);
+            
+            #ifdef DEBUG
+                cout << "[DEBUG] Reading json info" << endl;
+            #endif 
 
             this->max_players = file["max_players"].get<int>();
             this->time_for_question = file["time_for_question"].get<int>();
@@ -180,6 +251,11 @@ class Game
 
             for (size_t i = 0; i < data.size(); i++)
             {
+
+                #ifdef DEBUG
+                    cout << "[DEBUG] Reading " << i << "th question" << endl;
+                #endif 
+
 
                 std::vector<std::string> alt;
 
@@ -204,19 +280,39 @@ class Game
             state = GameState::registration;
             registration_phase();
 
+            #ifdef DEBUG
+                cout << "[DEBUG] Start post registration" << endl;
+            #endif  
+
             for(auto &question : questions)
             {
+                #ifdef DEBUG
+                    cout << "[DEBUG] Sending question" << endl;
+                #endif  
                 state = GameState::launching_question;
                 launch_question(question);
                 
                 state = GameState::waiting_for_awnser;
                 sleep(time_for_question);
-                
-                att_scores(question);
+            
+                #ifdef DEBUG
+                    std::cout << "[DEBUG] Getting the awnsers and recalculating the scores" << std::endl;
+                #endif                  
+                update_scores(question);
+                #ifdef DEBUG
+                    std::cout << "[DEBUG] Printing the scores for each registrated client" << std::endl;
+                    for(const auto & score: scores)
+                        std::cout << "[DEBUG] " << score.first << ' ' << score.second << std::endl;
+
+
+                    std::cout << "[DEBUG] Getting the awnsers and recalculating the scores" << std::endl;
+                #endif  
 
                 state = GameState::launching_ranks;
                 launch_ranks(question.question_id);
-
+                #ifdef DEBUG
+                    cout << "[DEBUG] Ended the process to the " << question.question_id << "th question" << endl;
+                #endif  
             }
 
 

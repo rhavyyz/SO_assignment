@@ -2,12 +2,10 @@
 #include <iostream>
 
 /*
-    A class used to pass to the client information about its rank
+    A class used to pass to the client information about its ranking
 */
 class Classification
 {
-private:
-    /* data */
 public:
     int total_players;
     int your_rank;

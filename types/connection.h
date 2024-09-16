@@ -18,17 +18,6 @@
 
 /*
     Class that stores everything required to the comunication between server and client
-
-    message_id - Stores the id to acess the shared memory to a Message class that is going
-                 to be used for the comunication
-    classification_id - Stores the id to acess the shared memory to a Classification class 
-                        that is going to be use for the comunication
-
-    client_id - stores the id from the client's thread and is used as a identifier within the 
-                the server's business rules.
-
-    from_client_signal - A semaphore that is going to be used as a signal from the client to the server
-    from_server_signal - A semaphore that is going to be used as a signal from the client to the server
 */
 class Connection
 {

@@ -3,6 +3,12 @@
 #include<semaphore>
 // #include"shared_memory.h"
 
+
+/*
+
+    Class that encapsulate a variable in a paralel programming context
+
+*/
 template<class T>
 class SharedResource
 {
