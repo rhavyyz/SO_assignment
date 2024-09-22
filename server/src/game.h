@@ -215,7 +215,7 @@ class Game
                 #ifdef DEBUG
                     cout << "[DEBUG] Sorting new scores" << endl;
                 #endif 
-                std::stable_sort(scores.begin(), scores.end());
+                std::stable_sort(scores.begin(), scores.end(), std::greater<std::pair<int, int>>());
 
                 break;
             }

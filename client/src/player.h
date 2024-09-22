@@ -114,7 +114,18 @@ class Player
                     std::cin >> awnser_value;
                 }
                 connection->question_awnser.awnser_index.set_value(awnser_value);
-                connection->question_awnser.awnser_time.set_value(time(NULL));
+
+                #ifdef DEBUG
+                    std::cout << "[DEBUG] Converting time to a readable time format" << std::endl; 
+                #endif  
+
+                auto now = time(NULL);
+                char readable_now[80]; 
+                strftime (readable_now,80,"%H:%M:%S",localtime(&now));    
+
+                std::cout << "awnser sent to server at " << readable_now<<  " | integer representation : " << now << std::endl ;
+
+                connection->question_awnser.awnser_time.set_value(now);
                 connection->question_awnser.question_id.set_value(q_id);
                 
 
