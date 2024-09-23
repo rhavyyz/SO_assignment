@@ -105,7 +105,7 @@ class Player
                 int awnser_value;
                 if (simulation)
                 {
-                    int awnser_value =  int_gen(0, qtd_alt-1)(rng);
+                    awnser_value =  int_gen(0, qtd_alt-1)(rng);
                     std::cout << "Guessed the item " << awnser_value << std::endl;
                 }
                 else
